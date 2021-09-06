@@ -1,0 +1,57 @@
+version: "3.8"  # optional since v1.27.0
+services:
+#Backend service
+  node:
+    #Not use name when you need to create another instance
+    # container_name: "nodejspost"
+    build:
+      context: ./backend
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          #10%
+          cpus: "0.1"
+          memory: 250M
+        reservations:
+          cpus: 0.25
+          memory: 128M 
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - postgresqls
+    ports:
+      - "3000-3002:3150"
+    networks:
+      - default  
+#Bd service
+  postgresqls:
+    container_name: "postgresqlpostgis"
+    image: "postgis/postgis"
+    ports: 
+      - "5433:5432"
+    volumes:
+       #allow *.sql, *.sql.gz, or *.sh and is execute only if data directory is empty
+       - ./basedata:/docker-entrypoint-initdb.d
+       - db_diego_kraenau:/var/lib/postgrespers
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bdtuto
+    networks:
+      - default
+#Adminer service
+  adminer:
+    container_name: adminer
+    image: adminer
+    restart: always
+    depends_on: 
+      - postgresqls
+    ports:
+       - 9090:8080
+    networks:
+      - default
+networks:
+  default:
+volumes:
+  db_diego_kraenau : {}

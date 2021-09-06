@@ -1,0 +1,15 @@
+docker commands :
+
+docker pull image:tag //get a image
+docker build -t(to set image name) image:name --no-cache --build-arg(Argumentos) JAR_FILE="/*" .(...this points means where yo will start)  //build image
+docker run -p 80:80 -p 3030:3030 --name container_name image:tag  // creeate container
+docker tag image:name repo:name(diegokraenau/image_test_kraenau):tagname   //to create a tag to image
+docker login
+docker push (repo:name)diegokraenau/image_test_kraenau:tag
+docker image pure //clean images with <none>
+for /F %i in ('docker images -a -q') do docker rmi -f %i // delete all images windows
+FOR /f "tokens=*" %i IN ('docker ps -a -q') DO docker rm %i // delete all containers
+
+//Instances
+docker-compose -f stack-orquestation.yml up --scale service:name=3 -d --force-recreate
+docker stats  //see performance of containers

@@ -1,0 +1,135 @@
+version: "3.8"  # optional since v1.27.0
+services:
+#Backend service
+  #PROD
+  node_prod:
+    #Not use name when you need to create another instance
+    # container_name: "nodejspost"
+    build:
+      context: ./backend
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          #10%
+          cpus: "0.1"
+          memory: 250M
+        reservations:
+          cpus: 0.25
+          memory: 128M 
+    environment:
+      - NODE_ENV=production
+      - DATABASE_SERVER=postgres_db_prod
+    depends_on:
+      - postgres_db_prod
+    ports:
+      - "3151-3152:3150"
+    networks:
+      - env_prod  
+  #PREPROD
+  node_preprod:
+    #Not use name when you need to create another instance
+    # container_name: "nodejspost"
+    build:
+      context: ./backend
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          #10%
+          cpus: "0.1"
+          memory: 250M
+        reservations:
+          cpus: 0.25
+          memory: 128M 
+    environment:
+      - NODE_ENV=production
+      - DATABASE_SERVER=postgres_db_preprod
+    depends_on:
+      - postgres_db_preprod
+    ports:
+      - "3150:3150"
+    networks:
+      - env_prep  
+#Bd service
+  #PROD
+  postgres_db_prod:
+    container_name: "postgres_db_prod"
+    image: "postgis/postgis"
+    ports: 
+      - "5433:5432"
+    volumes:
+       #allow *.sql, *.sql.gz, or *.sh and is execute only if data directory is empty
+       - ./basedata/init_prod.sql:/docker-entrypoint-initdb.d/init_prod.sql
+       - db_prod:/var/lib/postgrespers
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bdtuto
+    networks:
+      - env_prod
+  #PREPROD
+  postgres_db_preprod:
+    container_name: "postgres_db_preprod"
+    image: "postgis/postgis"
+    ports: 
+      - "5434:5432"
+    volumes:
+       #allow *.sql, *.sql.gz, or *.sh and is execute only if data directory is empty
+       - ./basedata/init_preprod.sql:/docker-entrypoint-initdb.d/init_preprod.sql
+       - db_preprod:/var/lib/postgrespers
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bdtuto
+    networks:
+      - env_prep
+#Adminer service
+  adminer:
+    container_name: adminer
+    image: adminer
+    restart: always
+    depends_on: 
+      - postgres_db_prod
+      - postgres_db_preprod
+    ports:
+       - 9090:8080
+    networks:
+      - env_prod
+      - env_prep
+
+networks:
+  env_prod:
+    driver: bridge  
+    #activate ipv6
+    driver_opts: 
+            com.docker.network.enable_ipv6: "true"
+    #IP Adress Manager
+    ipam: 
+        driver: default
+        config:
+        - 
+          subnet: 172.16.232.0/24
+          gateway: 172.16.232.1
+        - 
+          subnet: "2001:3974:3979::/64"
+          gateway: "2001:3974:3979::1"
+  env_prep:
+    driver: bridge  
+    #activate ipv6
+    driver_opts: 
+            com.docker.network.enable_ipv6: "true"
+    #IP Adress Manager
+    ipam:
+        driver: default
+        config:
+        - 
+          subnet: 172.16.235.0/24
+          gateway: 172.16.235.1
+        - 
+          subnet: "2001:3984:3989::/64"
+          gateway: "2001:3984:3989::1"
+
+volumes:
+  db_prod : {}
+  db_preprod : {}
